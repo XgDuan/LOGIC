@@ -25,17 +25,18 @@ Good idea is: The above setting fits the definition in FOL as predictive, relati
 Moreover,
 
 """
-
+from itertools import chain
 
 from numpy.core.fromnumeric import prod
 import torch
 import torch.nn as nn
 from torch.autograd import Function
+from torch.nn.modules.activation import LogSigmoid
 
 
-class Not:
-    def __call__(self, first, second):
-        return 1 - first
+# class Not:
+#     def __call__(self, first, second):
+#         return 1 - first
 
 ####################################################################################################
 # Lukasiewicz
@@ -91,50 +92,26 @@ class Add:
         Here t1 and t2 are two addable terms, and this function returns the added results of them
         """
         sum_ = t1 + t2
-        return sum_
-        # return sum_ + (sum_ % 1 - sum_).detach()
+        return sum_ + (sum_ % 10 - sum_).detach()
 
-
-class Sub:
-    def __call__(self, t1, t2):
-        r"""
-        Here t1 and t2 are two addable terms, and this function returns their difference
-        """
-        # TODO: Maybe we should filter the results here (filter out those negative one)
-        dif_ = t1 - t2
-        return dif_
-        return dif_ + (dif_ % 1 - dif_).detach()
-
-
-class Prod:
-    def __call__(self, t1, t2):
-        r"""
-        return t1 * t2
-        """
-        prod_ = t1 * t2
-        return prod_  # prod won't exceed the limits
+    def inv_op(self, one_op, target):
+        res = target - one_op
+        return [res] if res > -1 else None
 
 
 # Relation Symbols: R(t_1, t_2, ...t_n) \to True / False
-
 class Eq:
+
     B, epsilon = 1, 1e-3
 
     def __call__(self, t1, t2):
-        
-        dist = torch.sum((t1 - t2) ** 2, dim=1, keepdim=True)
-        # print(dist.mean())
-        return torch.exp(- 0.1 * dist)
-        # inner_prod = torch.sum(t1 * t2, dim=1, keepdim=True)  # Batch, 1
-        # abs_prod = torch.sum(torch.abs(t1) * torch.abs(t2), dim=1, keepdim=True)
-        # return (inner_prod / (abs_prod + 1e-5) + 1) / 2
-        # return 1 / ((1 + torch.exp(self.B * (t1 - t2 - self.epsilon))) * (1 + torch.exp(- self.B * (t1 - t2 + self.epsilon))))
-        # # return 1 - (t1 - t2).abs()   # remember the t-norm!!!
+        return t1 == t2
 
-
-class Neq:
-    def __call__(self, t1, t2):
-        return (t1 - t2).abs()
+    def inv_op(self, one_op, target):
+        if target:
+            return [one_op]
+        else:
+            return [(one_op - i) % 10 for i in range(1, 10)]
 
 
 class Keep:
@@ -142,6 +119,9 @@ class Keep:
         r"""
         """
         return t1
+
+    def inv_op(self, op, target):
+        return [target]
 
 
 # Definition of operations:
@@ -151,6 +131,41 @@ class Keep:
 # RELATION_INIT_OP = [
 #     Eq(), Neq()
 # ]
+
+class And:
+    def __call__(self, l1, l2):
+        return torch.logical_and(l1, l2)
+
+    def inv_op(self, one_op, target):
+        if one_op:  # one_op is true, the other shoule be the same with target
+            return [target]
+        elif target:  # one_op false, target_true, return None
+            return None
+        else:
+            return [one_op, target]
+
+
+class Or:
+    def __call__(self, l1, l2):
+        return torch.logical_or(l1, l2)
+
+    def inv_op(self, one_op, target):
+        if not one_op:
+            return [target]
+        elif target:
+            return [target, not target]
+        else:
+            return None
+
+
+class Not:
+    def __call__(self, l1, l2):
+        return torch.logical_not(l1)
+
+    def inv_op(self, op, target):
+        return [not target]
+
+
 TERM_OP = [
     Add(), Keep()
 ]
@@ -158,8 +173,17 @@ RELATION_INIT_OP = [
     Eq()
 ]
 RELATION_OP = [
-    Eq(), Neq(), Keep()
+    RELATION_INIT_OP[0], Keep()
 ]
 LOGIC_OP = [
-    Pand(), Por(), Not(), Keep()
+    And(), Or(), Keep(), Not()
 ]
+
+UNITARY_OP = [
+    TERM_OP[1], RELATION_OP[1], LOGIC_OP[2], LOGIC_OP[3]
+]
+
+embedding_dict = {
+    x: idx for idx, x in enumerate(chain(TERM_OP, RELATION_OP, LOGIC_OP))
+}
+embedding_dict['BOS'] = len(embedding_dict)
