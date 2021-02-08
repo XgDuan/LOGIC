@@ -2,3 +2,5 @@ save
 .vscode
 *.pyc
 .aim
+*ubyte
+*.gz
