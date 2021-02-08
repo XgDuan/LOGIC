@@ -29,11 +29,6 @@ class MNISTRPM(Dataset):
         self.root_dir = root_dir
         self.dataset_size = dataset_size
 
-        # MNIST digits ConstructiondE
-        # self.mnist_digits = torchvision.datasets.EMNIST(
-        #     self.root_dir,
-        #     split='mnist', train=train, download=True
-        # )
         self.mnist_digits = torchvision.datasets.MNIST(
             self.root_dir, train=train, download=True
         )
