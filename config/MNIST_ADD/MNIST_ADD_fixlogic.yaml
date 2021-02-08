@@ -1,0 +1,47 @@
+# encoder:
+#   input_channel: 1
+#   input_size: [80, 80]
+#   conv: [64]
+#   kernel_size: [7]
+#   stride: [2]
+#   padding: [3]
+#   activation: "ReLU"
+#   norm: "BatchNorm2d"
+# # decoder:
+# #   conv: [64, 32, 32, 10]
+# #   kernel_size: [3, 3, 3, 3]
+# #   stride: [2, 2, 2, 2, 2, 2]
+# #   padding: [0, 0, 0, 1, 1]
+# #   output_padding : [0, 0, 1, 1, 1]
+# #   activation: "LeakyReLU"
+# #   norm: "BatchNorm2d"
+# symbolizer:
+#   output_size: 16  # output hidden size
+#   pooling: 2
+# logicnet:
+#   input_size: -1  # To be determined by the symbolizer
+#   output_size: 39  # the meta-matrix size
+#   logic_t1:
+#     layer: 2
+#   logic_t2:
+#     input_size: 128  # Each variable is represented by 'input_size' binary variable
+#     layer: 2  # If this value is bigger than 2. There are more operations to be done
+encoder:  # Feature Encoding
+    input_channel: 1
+    input_size: [28, 28]
+    output_size: 128
+decoder:  # Feature Encoding
+    output_channel: 1
+    input_size: 2
+    output_size: [28, 28]
+
+symbolizer:
+    number:
+        num_output: 10
+        sample_path: True
+deeplogic:
+    number:
+        [
+            ['term', 3, 2],
+            ['relationinit', 2, 1],
+        ]
