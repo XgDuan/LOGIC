@@ -1,10 +1,12 @@
 r"""
 Generating the attributes and rules pairs
 """
+import copy
 import argparse
 import random
 import itertools
 from functools import reduce
+from typing import NewType
 
 import numpy as np
 
@@ -49,7 +51,7 @@ def enumerate_attr_rule_combinations(noisy_rules=False):
     return itertools.product(*possible_attr_rule_combinations)
 
 
-def enumerate_attr_rule_instances(seq_len=3, ring=True):
+def enumerate_attr_rule_instances(seq_len=3):
     r"""
     Generate all possible pairs of attribute-rule instances.
     Return:
@@ -64,12 +66,6 @@ def enumerate_attr_rule_instances(seq_len=3, ring=True):
             }
         }
     """
-    # res = h5py.File("Test.hdf5", "w")
-    # for attr_k, attrs in ATTRIBUTES.items():
-    #     res.create_group(attr_k)
-    #     for rule_k, rules in RULES.items():
-    #         res[attr_k].create_group(rule_k)
-    RULES["RANDOM"] = [0]
     res = {}
     for attr_k, attrs in ATTRIBUTES.items():
         res[attr_k] = {}
@@ -83,10 +79,8 @@ def enumerate_attr_rule_instances(seq_len=3, ring=True):
         first_n = itertools.product(attr_cand, repeat=seq_len - 1)
         res = []
         for possible in first_n:
-            if step == "ADD" and (ring or sum(possible) <= attr_cand[-1]):
-                res.append([*possible, sum(possible) % (attr_cand[-1] + 1)])
-            elif step == "PROD" and (ring or prod(possible) <= attr_cand[-1]):
-                res.append([*possible, prod(possible) % (attr_cand[-1] + 1)])
+            if step == 0 and sum(possible) <= attr_cand[-1]:  # Add
+                res.append([*possible, sum(possible)])
         return res
 
     def handle_progression(attr_cand, step):
@@ -96,10 +90,9 @@ def enumerate_attr_rule_instances(seq_len=3, ring=True):
             instance = [current]
             for possible in range(seq_len - 1):
                 current += step
-                if len(attr_cand) == 10 and \
-                   (step > 0 and current > attr_cand[-1] or step < 0 and current < attr_cand[0]):
+                if step > 0 and current > attr_cand[-1] or step < 0 and current < attr_cand[0]:
                     break
-                instance.append(current % (attr_cand[-1] + 1))
+                instance.append(current)
             if len(instance) < seq_len:
                 continue
             res.append(instance)
@@ -147,35 +140,46 @@ def dataset_generation(dataset_size=10000, seq_len=3):
     # import pdb; pdb.set_trace()
     res = []
 
-    def generate_wrong_ans(attr_rule, attr_matrix, wa_num=7):
+    def generate_wrong_ans(attr_list, attr_rule):
         r"""
         Here we  generate wrong  answers for the task.
         TODO:  considering  better  wrong  answer  generator
         """
-        third_row = attr_matrix[:, 6:]  # K, 3
-        answer = attr_matrix[:, -1]  # K
-        wa = np.repeat(answer[:, np.newaxis], wa_num, axis=1)  # K * wa_num
-        for idx, attr_rule_val in enumerate(attr_rule):
-            if attr_rule_val[1] == "DIST_THREE":  # Make the third answer the same with other
-                wa[idx, :wa_num // 2] = third_row[idx, 0]  # Half as the first
-                wa[idx, wa_num // 2:] = third_row[idx, 1]  # Half as the second
+        attr_list = copy.deepcopy(attr_list)  # copied instance
+        # attr_rule = copy.deepcopy(attr_rule)
+        res_attr_rule = [None for _ in range(len(attr_rule))]
+        res = []
+        for idx, attrs in enumerate(attr_list):
+            label = random.randint(0, 1)  # False / True
+            if label:
+                res.append(attrs)  # attr, rule_name, rule_val
+                res_attr_rule[idx] = (*attr_rule[idx], label)
+                continue
+            new_attrs = list(attrs)
+            if attr_rule[idx][1] == "DIST_THREE":  # Make the third answer the same with other
+                if random.random() > 0.5:
+                    new_attrs = (attrs[0], attrs[1], attrs[0])
+                else:
+                    new_attrs = (attrs[0], attrs[1], attrs[1])
             else:  # Else random
-                wa[idx] = np.arange(wa_num) - wa_num // 2
-                wa[idx, : wa_num // 2 + 1] = wa[idx, : wa_num // 2 + 1] - 1
-                wa[idx] = (wa[idx] + answer[idx]) % (len(ATTRIBUTES[attr_rule_val[0]]) + 1)
-                wa = wa % (ATTRIBUTES[attr_rule_val[0]][-1] + 1)
-        return wa
+                position = random.randint(0, 2)
+                new_val = (attrs[position] + random.randint(0, 9)) % 10
+                new_attrs[position] = new_val
+            res.append(new_attrs)
+            res_attr_rule[idx] = (*attr_rule[idx], label)
+
+        return res, res_attr_rule    
 
     for _ in range(dataset_size):
         ar = random.choice(attr_rule_comb)  # sample the attr_rule
         # import pdb; pdb.set_trace()
         attr_list = [
-            random.sample(attr_rule_inst[ar[i][0]][ar[i][1]][ar[i][2]], 3)
+            random.sample(attr_rule_inst[ar[i][0]][ar[i][1]][ar[i][2]], 1)[0]
             for i in range(len(ar))
         ]  # [[[], [], []], [[], [], []], [[], [], []]]
-        attr_matrix = np.array(attr_list).reshape(len(attr_list), -1)
-        wrong_ans = generate_wrong_ans(ar, attr_matrix, 7)
-        res.append((attr_matrix, wrong_ans))
+        attr_matrix, ar = generate_wrong_ans(attr_list, ar)
+        # import pdb; pdb.set_trace()
+        res.append((attr_matrix, ar))
     return res
 
 

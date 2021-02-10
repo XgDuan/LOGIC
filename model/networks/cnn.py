@@ -17,13 +17,13 @@ class CNN(torch.nn.Module):
             nn.Conv2d(args.input_channel, 64, 3, 1),
             nn.ReLU(),
 
-            nn.Conv2d(64, 128, 3, 1),
+            nn.Conv2d(64, 512, 3, 1),
             nn.ReLU(),
 
             nn.MaxPool2d(2),
             nn.Dropout(0.25),
             nn.Flatten(),
-            nn.Linear(9216 * 2, args.output_size),
+            nn.Linear(9216 * 2 * 4, args.output_size),
             nn.ReLU(),
             nn.Dropout(0.5)
         )  # 28 * 28 * 1 -> 128

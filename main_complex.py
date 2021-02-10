@@ -10,7 +10,7 @@ from config import parser, args_augment
 from utils import Monitor, accuracy
 
 from datasets.MNIST_RULE.dataset import MNISTRPM
-from model.DLN_complex import DLN
+from model.cnn_mlp_complex_binary import CNN_MLP as DLN
 
 logger = None
 summary_writter = None
@@ -22,7 +22,7 @@ def build_model(args):
     return model
 
 
-pretrain_batch = 100
+pretrain_batch = 0
 
 
 def train(model, optim_theta, optim_phi, trainloader, epoch, monitors):
@@ -47,14 +47,15 @@ def train(model, optim_theta, optim_phi, trainloader, epoch, monitors):
             loss.backward()
             optim_theta.step()
         else:
-            optim_phi.zero_grad()
-            optim_theta.zero_grad()
-            loss_phi, loss_theta, log = model.compute_overall_loss(image, meta_data, logics)
+
+            loss_theta, loss_phi, log = model.compute_overall_loss(image, meta_data, logics)
             total_loss = loss_phi + loss_theta
             if loss_phi != 0:
+                optim_phi.zero_grad()
                 loss_phi.backward()
                 optim_phi.step()
             if loss_theta != 0:
+                optim_theta.zero_grad()
                 loss_theta.backward()
                 optim_theta.step()
 
@@ -73,14 +74,15 @@ def train(model, optim_theta, optim_phi, trainloader, epoch, monitors):
             ))
         # if batch_idx % 100 == 99 and train_structure:
         #     model.anneal(summary_writter)
-    logger.info("*" * 50)
-    for key, val in model.deeplogics.items():
-        logger.info("Top K rule system of logic[{}]:".format(key))
-        val.vis_sequence()
+    # logger.info("*" * 50)
+    # for key, val in model.deeplogics.items():
+    #     logger.info("Top K rule system of logic[{}]:".format(key))
+    #     val.vis_sequence()
     logger.info("*" * 50)
     average_loss = monitors['loss'].reset_and_log()
-    average_acc = sum([monitors[key].reset_and_log() for key in log if key.startswith("acc")]) / 3
-    logger.infox("Average Training Loss: {:.6f}, Acc: {:.6f}".format(average_loss, average_acc))
+    average_acc = sum([monitors[key].reset_and_log() for key in log if key.startswith("acc")]) / 2
+    acc_logic =sum([monitors[key].reset_and_log() for key in log if key.startswith("lacc")])
+    logger.infox("Average Training Loss: {:.6f}, Acc: {:.6f}, logic acc: {:.6f}".format(average_loss, average_acc, acc_logic))
 
 
 def validate(model, validloader, epoch, monitors):
@@ -94,10 +96,10 @@ def validate(model, validloader, epoch, monitors):
             logics = {key: val.cuda() for key, val in logics.items()}
   
         with torch.no_grad():
-            loss, pred, log = model.compute_perception_loss(image, meta_data, logics)
+            loss1, loss2, log = model.compute_overall_loss(image, meta_data, logics)
         # Monitor
         log_str = []
-        log_str.append(monitors['loss'].update_and_format(loss.item(), summary_writter))
+        log_str.append(monitors['loss'].update_and_format(loss1.item(), summary_writter))
         for key, val in log.items():
             if key in monitors:
                 log_str.append(monitors[key].update_and_format(val, summary_writter))
@@ -106,8 +108,10 @@ def validate(model, validloader, epoch, monitors):
             logger.info('Validate: Epoch:{}, Batch:{:04d}/{:04d}, {}'.format(
                 epoch, batch_idx, len(validloader), ', '.join(log_str)
             ))
-    average_loss, average_acc = monitors['loss'].reset_and_log(), monitors['acc'].reset_and_log()
-    logger.infox("Average Validation Loss: {:.6f}, Acc: {:.6f}".format(average_loss, average_acc))
+    average_loss = monitors['loss'].reset_and_log()
+    average_acc = sum([monitors[key].reset_and_log() for key in log if key.startswith("acc")]) / 2
+    acc_logic =sum([monitors[key].reset_and_log() for key in log if key.startswith("lacc")])
+    logger.infox("Average Training Loss: {:.6f}, Acc: {:.6f}, logic acc: {:.6f}".format(average_loss, average_acc, acc_logic))
     return average_loss, average_acc
 
 
@@ -141,8 +145,8 @@ def main(args):
     # model.resample_structure()  # call this function after the .cuda() command
 
     # Optimizer
-    # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    optim_theta, optim_phi = model.obtain_optimizer()
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    # optim_theta, optim_phi = model.obtain_optimizer()
     # Monitors
     train_monitors = {
         'acc_NUMBER': Monitor("training/acc/number"),
@@ -175,16 +179,11 @@ def main(args):
         'reward_L3': Monitor("val/reward_l3"),
     }
 
-    global pretrain_batch
-    for epoch in range(-10, 20):
-        train(model, optim_theta, optim_phi, trainloader, epoch, train_monitors)
-        # avg_loss, avg_acc = validate(model, validloader, epoch, valid_monitors)
-
-    # for epoch in range(0, args.epochs):
-    #     logger.info("=" * 80)
-    #     train(model, optim_theta, optim_phi, trainloader, epoch, train_monitors, flag=False)
-    #     avg_loss, avg_acc = validate(model, validloader, epoch, valid_monitors)
-    #     model.save(args.save, epoch, avg_acc, avg_loss)
+    for epoch in range(0, args.epochs):
+        logger.info("=" * 80)
+        train(model, optimizer, None, trainloader, epoch, train_monitors)
+        avg_loss, avg_acc = validate(model, validloader, epoch, valid_monitors)
+        model.save(args.save, epoch, avg_acc, avg_loss)
  
 
 if __name__ == '__main__':
@@ -194,6 +193,5 @@ if __name__ == '__main__':
     summary_writter = tensorboardX.SummaryWriter(args.logdir)
     logger.info("*" * 80)
     logger.info(vars(args))
-    # logger.info(json.dumps(vars(args.model), sort_keys=True, indent=2, separators=(',', ': ')))
     logger.info("*" * 80)
     main(args)

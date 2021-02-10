@@ -12,7 +12,7 @@ class Monitor:
         if writer is not None:
             # import pdb; pdb.set_trace()
             writer.add_scalar(self.name, val, self.total_counter)
-        return "{}: {:.04f}".format(self.name.split('/')[-1], val)
+        return "{}: {:.04f}".format(self.name, val)
 
     def reset_and_log(self, ):
         average_val = self.val / self.counter

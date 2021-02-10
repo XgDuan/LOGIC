@@ -135,23 +135,6 @@ class DLN(BasicModel):
 
         symbol_acc = {key: self.inputlayer.node[key] == meta_data[key] for key in meta_data}
 
-        # for key, val in pseudo_labels.items():
-        #     # if val is not None and (np.random.random() < 0.99 or not self.training):
-        #     if val is not None:
-        #         label, mask = val
-        #         mask = torch.BoolTensor(mask).to(target.device)
-        #         # import pdb; pdb.set_trace()
-        #         # from IPython import embed; embed()
-        #         label_acc = torch.mean(
-        #             (torch.stack(label, dim=1)[mask, :] == meta_data[mask, :]).float()
-        #         )
-        #         for inputs, label in zip(self.deeplogics[key].inputlayer, label):
-        #             loss = loss + nn.functional.nll_loss(inputs.inputs[mask], label[mask])
-        #     else:  # What to do if found nothing.
-        #         return False
-
-        # return loss, pred, {'acc': acc.item(), 'sym_acc': meta_acc, 'lab_acc': label_acc}
-
     def compute_rigger_loss(self, inputs, meta_data=None, logics=None):
         B, K, C, H, W = inputs.shape
         normalize_loss = self.resample_structure()

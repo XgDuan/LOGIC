@@ -1,0 +1,38 @@
+encoder:  # Feature Encoding
+    input_channel: 3
+    input_size: [28, 28]
+    output_size: 256
+symbolizer:
+    number:
+        num_output: 10
+        sample_path: True
+    color:
+        num_output: 10
+        sample_path: True
+deeplogic:
+    L1:
+        [
+            ['term', 3, 3],
+            ['relationinit', 3, 3],
+            ['relation', 3, 3],
+            ['logic', 3, 3],
+            ['logic', 3, 1]
+        ]
+    L2:
+        [
+            ['term', 3, 3],
+            ['term', 3, 3],
+            ['relationinit', 3, 3],
+            ['relation', 3, 3],
+            ['logic', 3, 3],
+            ['logic', 3, 1]
+        ]
+    L3:
+        [
+            ['term', 3, 3],
+            ['term', 3, 3],
+            ['relationinit', 3, 3],
+            ['relation', 3, 3],
+            ['logic', 3, 3],
+            ['logic', 3, 1]
+        ]

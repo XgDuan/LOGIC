@@ -12,10 +12,13 @@ class MLP(torch.nn.Module):
 
         # The classification structure: two layer FC
         self.row_feature = nn.Sequential(
-            nn.Linear(input_size, input_size // 2),
+            nn.Linear(input_size, input_size * 2),
             nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(input_size // 2, output_size)
+            nn.Dropout(0.1),
+            nn.Linear(input_size * 2, input_size),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(input_size, output_size)
         )
         self.repr_str = "{}(name={}; {} -> {})".format(
             self.__class__.__name__, name, input_size, output_size)

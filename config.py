@@ -149,13 +149,13 @@ def parser():
     training = parser.add_argument_group("training", "Training settting")
     training.add_argument('--epochs', type=int, default=200,
         help="Training epochs. In each epoch, the whole model will be trained")
-    training.add_argument('--batch_size', type=int, default=32,
+    training.add_argument('--batch_size', type=int, default=64,
         help="Batch Size.")
     training.add_argument("--seed", type=int, default=12345,
         help="Random Seeds for all modules (torch, numpy, random)")
     training.add_argument("--device", type=int, default=-1,
         help="GPU devices. (Considering setting devices automatically)")
-    training.add_argument("--lr", type=float, default=0.1,
+    training.add_argument("--lr", type=float, default=1e-3,
         help="Learning Rate")
     training.add_argument("--num_workers", type=int, default=16,
         help="number of workers used to prepare data")
@@ -164,7 +164,7 @@ def parser():
 
     # Data Parameters
     data = parser.add_argument_group("data", "Data settting")
-    data.add_argument("--dataset_size", type=int, default=5000)
+    data.add_argument("--dataset_size", type=int, default=20000)
     data.add_argument("--path", type=str, default="./datasets",
         help="Raw data path. You should download the data")
     data.add_argument("--prefix", type=str, default='*',

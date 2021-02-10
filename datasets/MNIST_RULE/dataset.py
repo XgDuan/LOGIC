@@ -61,42 +61,46 @@ class MNISTRPM(Dataset):
                 np.array(random.choice(self.mnist_inv_tab[i])) for i in number_mat
             ]
         
-        def color_render(image_mat, color_mat, bcolor_mat):
-            return [
-                image[np.newaxis, :, :] * np.array(COLOR_WHEEL[color])[:, np.newaxis, np.newaxis] + \
-                (255 - image[np.newaxis, :, :]) * np.array(BCOLOR_WHEEL[bcolor])[:, np.newaxis, np.newaxis]
-                for image, color, bcolor in zip(image_mat, color_mat, bcolor_mat)
-            ]
+        def color_render(image_mat, color_mat):
             # return [
-            #     (image[np.newaxis, :, :] * np.array(COLOR_WHEEL[color])[:, np.newaxis, np.newaxis])
-            #     for image, color in zip(image_mat, color_mat)
+            #     image[np.newaxis, :, :] * np.array(COLOR_WHEEL[color])[:, np.newaxis, np.newaxis] + \
+            #     (255 - image[np.newaxis, :, :]) * np.array(BCOLOR_WHEEL[bcolor])[:, np.newaxis, np.newaxis]
+            #     for image, color, bcolor in zip(image_mat, color_mat, bcolor_mat)
             # ]
-
-        image_mat = color_render(number_render(attr_list[0]), attr_list[1], attr_list[2])
+            return [
+                (image[np.newaxis, :, :] * np.array(COLOR_WHEEL[color])[:, np.newaxis, np.newaxis])
+                for image, color in zip(image_mat, color_mat)
+            ]
+        # import pdb; pdb.set_trace()
+        image_mat = color_render(number_render(attr_list[0]), attr_list[1])
         return image_mat
 
     def __getitem__(self, idx):
+        # import pdb; pdb.set_trace()
+        # try:
         attr_list, attr_rule = self.datasets[idx]
         # import pdb; pdb.set_trace()
         image_mat = self.render(attr_list)
 
+        # import pdb; pdb.set_trace()
         image_mat = torch.from_numpy(np.stack(image_mat, axis=0)).float() / 255
         # import pdb; pdb.set_trace()
         attr_dict, attr_rule_dict = {}, {}
         # import pdb; pdb.set_trace()
         for al, ar in zip(attr_list, attr_rule):
-            attr_dict[ar[0]] = np.array(al)
+            attr_dict[ar[0]] = np.array(al, dtype=np.int64)
             # import pdb; pdb.set_trace()
             attr_rule_dict[ar[0]] = np.array([
                 RULES2INDEX[ar[1]], ar[2], ar[3]
-            ])
+            ], dtype=np.int64)
+
         # import pdb; pdb.set_trace()
         return image_mat, attr_dict, attr_rule_dict
 
 
 if __name__ == '__main__':
     random.seed(1)
-    dataset = MNISTRPM('./', 1000, 4)
+    dataset = MNISTRPM('./', 1000, 3)
     import h5py
     F = h5py.File('test_num_rule.hdf5', 'w')
     F.create_group("train")

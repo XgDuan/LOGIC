@@ -3,8 +3,8 @@ r"""
 
 
 # RULES
-ARITHMETRIC = ['ADD', 'PROD']
-PROGRESSION = [1, 2, -1, -2]
+ARITHMETRIC = [0, ]
+PROGRESSION = [1, -1]
 CONST = [0]
 DIST_THREE = [0]
 
@@ -24,17 +24,25 @@ ROTATION = [0, 1, 2, 3]
 # 9, BV, 127,   0, 255
 # a, V,  255,   0, 255
 # b, RV, 255,   0, 127
-COLOR = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+COLOR = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 BCOLOR = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 # RULES, ATTRIBUTES, FORBIDDEN
 RULES = {"ARITHMETRIC": ARITHMETRIC,
          "PROGRESSION": PROGRESSION,
-         "CONST": CONST,
+        #  "CONST": CONST,
          "DIST_THREE": DIST_THREE
          }
+
+RULES2INDEX = {"ARITHMETRIC": 0,
+         "PROGRESSION": 1,
+        #  "CONST": CONST,
+         "DIST_THREE": 2
+         }
+
+
 ATTRIBUTES = {"NUMBER": NUMBER,
               "COLOR": COLOR,
-              "BCOLOR": BCOLOR,
+            #   "BCOLOR": BCOLOR,
               # "ROTATION": ROTATION
               }
 
@@ -77,7 +85,7 @@ ATTRIBUTES = {"NUMBER": NUMBER,
 
 # }
 
-BCOLOR_WHELL = {
+BCOLOR_WHEEL = {
     0: [0.0, 0.0, 0.0],
     1: [0.1, 0.1, 0.1],  # Red
     2: [0.2, 0.2, 0.2],
@@ -100,7 +108,7 @@ BCOLOR_WHELL = {
 #     5: [1, 1, 1],
 # }
 
-COLOR_WHELL = {
+COLOR_WHEEL = {
     0: [1, 0, 0],  # Red
     1: [1, 0.5, 0],
     2: [1, 1, 0],
